@@ -1,0 +1,116 @@
+{
+  "entities": {
+    "UserPublic": {
+      "title": "UserPublic",
+      "description": "Public profile information for a user in TORNOW.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "createdAt", "updatedAt"]
+    },
+    "UserPrivate": {
+      "title": "UserPrivate",
+      "description": "Isolated private PII data for a user (email, phone, rut).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "createdAt", "updatedAt"]
+    },
+    "Tournament": {
+      "title": "Tournament",
+      "description": "Official TORNOW sports tournament record.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "sport": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "format": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "venue": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "completed"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["ownerId", "name", "sport", "format", "venue", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserPublic",
+      "description": "Public user profile documents."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": "UserPrivate",
+      "description": "Isolated private PII documents for the user."
+    },
+    "/tournaments/{tournamentId}": {
+      "schema": "Tournament",
+      "description": "Official tournament documents managed by their owner or admin."
+    }
+  }
+}

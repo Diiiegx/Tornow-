@@ -1,0 +1,167 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'diegostrqfe@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Validation Blueprint: UserPublic
+    function isValidUserPublic(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: UserPrivate (PII Isolated)
+    function isValidUserPrivate(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'phone', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 32)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: Tournament
+    function isValidTournament(data) {
+      return data.keys().hasAll(['ownerId', 'name', 'sport', 'format', 'venue', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'name', 'sport', 'format', 'venue', 'status', 'createdAt', 'updatedAt']) &&
+        isValidId(data.ownerId) &&
+        data.ownerId == request.auth.uid &&
+        data.name is string && data.name.size() >= 3 && data.name.size() <= 120 &&
+        data.sport is string && data.sport.size() >= 1 && data.sport.size() <= 40 &&
+        data.format is string && data.format.size() >= 1 && data.format.size() <= 40 &&
+        data.venue is string && data.venue.size() >= 3 && data.venue.size() <= 200 &&
+        data.status is string && (data.status == 'active' || data.status == 'completed') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Collection: /admins/{adminId}
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow create, update, delete: if false;
+    }
+
+    // Collection: /users/{userId} (Public Profile)
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidUserPublic(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidUserPublic(incoming()) &&
+        isValidId(userId) &&
+        (isOwner(userId) || isAdmin()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt']);
+
+      allow delete: if isValidId(userId) && isAdmin();
+
+      // Subcollection: /users/{userId}/private/{docId} (Strict PII Isolation)
+      match /private/{docId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(docId) && (request.auth.uid == userId || isAdmin()) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+
+        allow create: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          isValidUserPrivate(incoming()) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if isValidUserPrivate(incoming()) &&
+          isValidId(userId) &&
+          isValidId(docId) &&
+          (isOwner(userId) || isAdmin()) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'phone', 'updatedAt']) &&
+          exists(/databases/$(database)/documents/users/$(userId));
+
+        allow delete: if isValidId(userId) && isValidId(docId) && isAdmin();
+      }
+    }
+
+    // Collection: /tournaments/{tournamentId}
+    match /tournaments/{tournamentId} {
+      allow get: if isSignedIn() && isValidId(tournamentId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().ownerId == request.auth.uid || isAdmin());
+
+      allow create: if isVerifiedUser() &&
+        isValidId(tournamentId) &&
+        isValidTournament(incoming()) &&
+        incoming().status == 'active' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidTournament(incoming()) &&
+        isValidId(tournamentId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          (
+            isOwner(existing().ownerId) &&
+            existing().status != 'completed' &&
+            (
+              // Action 1: Edit details
+              incoming().diff(existing()).affectedKeys().hasOnly(['name', 'venue', 'updatedAt']) ||
+              // Action 2: Complete tournament
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+            )
+          )
+        );
+
+      allow delete: if isValidId(tournamentId) && (isOwner(existing().ownerId) || isAdmin());
+    }
+  }
+}

@@ -1,0 +1,105 @@
+/**
+ * Lista oficial de Comunas de Chile agrupadas por Región para selección y geocodificación
+ */
+
+export const CHILEAN_COMUNAS: string[] = [
+  // Región Metropolitana
+  'Santiago',
+  'Cerrillos',
+  'Cerro Navia',
+  'Conchalí',
+  'El Bosque',
+  'Estación Central',
+  'Huechuraba',
+  'Independencia',
+  'La Cisterna',
+  'La Florida',
+  'La Granja',
+  'La Pintana',
+  'La Reina',
+  'Las Condes',
+  'Lo Barnechea',
+  'Lo Espejo',
+  'Lo Prado',
+  'Macul',
+  'Maipú',
+  'Ñuñoa',
+  'Pedro Aguirre Cerda',
+  'Peñalolén',
+  'Providencia',
+  'Pudahuel',
+  'Quilicura',
+  'Quinta Normal',
+  'Recoleta',
+  'Renca',
+  'San Joaquín',
+  'San Miguel',
+  'San Ramón',
+  'Vitacura',
+  'Puente Alto',
+  'Pirque',
+  'San José de Maipo',
+  'San Bernardo',
+  'Buin',
+  'Calera de Tango',
+  'Paine',
+  'Melipilla',
+  'Talagante',
+  'Peñaflor',
+  'Colina',
+  'Lampa',
+  // Valparaíso
+  'Valparaíso',
+  'Viña del Mar',
+  'Concón',
+  'Quilpué',
+  'Villa Alemana',
+  'Quillota',
+  'San Antonio',
+  'Los Andes',
+  'San Felipe',
+  // Biobío
+  'Concepción',
+  'Talcahuano',
+  'San Pedro de la Paz',
+  'Chiguayante',
+  'Coronel',
+  'Los Ángeles',
+  // Coquimbo
+  'La Serena',
+  'Coquimbo',
+  'Ovalle',
+  // Antofagasta
+  'Antofagasta',
+  'Calama',
+  // Araucanía
+  'Temuco',
+  'Padre Las Casas',
+  'Villarrica',
+  'Pucón',
+  // O'Higgins
+  'Rancagua',
+  'Machalí',
+  'San Fernando',
+  // Maule
+  'Talca',
+  'Curicó',
+  'Linares',
+  // Los Lagos
+  'Puerto Montt',
+  'Puerto Varas',
+  'Osorno',
+  'Castro',
+  // Los Ríos
+  'Valdivia',
+  // Tarapacá / Arica
+  'Iquique',
+  'Alto Hospicio',
+  'Arica',
+  // Magallanes
+  'Punta Arenas',
+  // Aysén
+  'Coyhaique',
+  // Ñuble
+  'Chillán',
+];

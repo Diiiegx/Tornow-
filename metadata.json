@@ -1,0 +1,8 @@
+{
+  "name": "Remix Liga Mikasa - Torneo de Voleibol",
+  "description": "Sistema integral de gestión de torneos de voleibol con marcadores en vivo, posiciones, fixture, nóminas de clubes y notificaciones push.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
